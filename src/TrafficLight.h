@@ -19,8 +19,14 @@ template <class T>
 class MessageQueue
 {
 public:
+    void send(T &&msg);
+
+    T receive();    
 
 private:
+    std::mutex _mutex;
+    std::condition_variable _cond;
+    std::deque<T> _messages;
     
 };
 
@@ -32,13 +38,14 @@ private:
 
 enum TrafficLightPhase {red, green};
 
-class TrafficLight
+class TrafficLight : public TrafficObject
 {
 public:
     // constructor / desctructor
     TrafficLight();
 
     // getters / setters
+    TrafficLightPhase getCurrentPhase();
 
     // typical behaviour methods
     void waitForGreen();
@@ -59,6 +66,8 @@ private:
     std::condition_variable _condition;
     std::mutex _mutex;
     TrafficLightPhase _currentPhase;
+    MessageQueue<TrafficLightPhase> _queue;
+    
 
 };
 
