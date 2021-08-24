@@ -15,7 +15,7 @@ T MessageQueue<T>::receive()
 
     std::unique_lock<std::mutex> uLock(_mutex);
 
-    _cond.wait(uLock, [this]{return !_messages.empty();}) //
+    _cond.wait(uLock, [this]{return !_messages.empty();}); //
 
     T msg = std::move(_messages.back()); //store the last entry in the list & return it
     _messages.pop_back(); //remove the entry from the list
@@ -71,7 +71,7 @@ void TrafficLight::simulate()
 {
     // FP.2b : Finally, the private method „cycleThroughPhases“ should be started in a thread when the public method „simulate“ is called. To do this, use the thread queue in the base class. 
 
-        TrafficObject::threads.emplace_back(std::thread(&cycleThroughPhases), this);
+        TrafficObject::threads.emplace_back(std::thread(&TrafficLight::cycleThroughPhases, this));
 }
 
 // virtual function which is executed in a thread
@@ -88,17 +88,18 @@ void TrafficLight::cycleThroughPhases()
     std::mt19937 eng(rd());
     std::uniform_int_distribution<> distr(4, 6);
     cycleDuration = distr(eng);
-    std::chrono::time_point<std::chrono::system_clock> lastUpdate;
+    std::chrono::time_point<std::chrono::system_clock> lastUpdateTime;
 
-    // Initialize stop watch
-    lastUpdate = std::chrono::system_clock::now();
+    // Initialize 
+    lastUpdateTime = std::chrono::system_clock::now();
     while(true)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1)); //wait for 1ms between cycles
-        // compute time difference to stop watch
-        long timeSinceLastUpdate = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - lastUpdate).count();
-        if (timeSinceLastUpdate >= cycleDuration)
+        // compute time difference & check if the duration is more& ch
+        long timeSince = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - lastUpdateTime).count();
+        if (timeSince >= cycleDuration)
         {
+            //Toggle the light phase
             if (_currentPhase == red)
             {
                 _currentPhase = green;
@@ -111,9 +112,8 @@ void TrafficLight::cycleThroughPhases()
             _queue.send(std::move(_currentPhase));
         }
 
-        // reset stop watch for next cycle
-        lastUpdate = std::chrono::system_clock::now();
+        // reset for next cycle
+        lastUpdateTime = std::chrono::system_clock::now();
     }
 }
 
-// */
